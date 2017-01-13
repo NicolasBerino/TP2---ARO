@@ -15,41 +15,53 @@ typedef struct{
 	int nbObjet;
 }parametre;
 
-parametre* remplirTab(objet* objets, char* nomFic){
-
-	parametre* param = malloc(sizeof(parametre));
-	int poids,valeur,compteur = 0;
+parametre* initialiserParam(char* nomFic){
+	int compteur = 0;
 	FILE* f = fopen(nomFic,"r");
-
+	parametre* param = malloc(sizeof(parametre));
 	char c;
+	int poidsMax = 0;
 
-	while(feof(f)){
+	fscanf(f,"%d",&poidsMax);
+	do{
 		c=fgetc(f);
 		if(c=='\n')compteur ++;
-	}
+	}while(c!=EOF);
 
-	param->nbObjet = compteur-1;
+	param->nbObjet = compteur-2;
+	param->poidsMax = 0;
+
 	
+	
+	fclose(f);
 
-	objets = malloc(sizeof(objet)*(compteur-1));
-	rewind(f);
+	fscanf(f,"%d",&poidsMax);
+	param->poidsMax = poidsMax;
 
+	return param;
+}
 
-	fscanf(f,"%d",param->poidsMax);
+objet* remplirTab(char* nomFic,int nbObjet){
 
-	compteur = 0;
-	while(feof(f)){
-		fscanf(f,"%d %d",&poids,&valeur);
+	FILE* f = fopen(nomFic,"r");
+	objet* objets = malloc(sizeof(objet)*nbObjet);
+	/*fscanf(f,"");
+	int compteur = 0;
+	
+	while(!feof(f)){
+		float poids,valeur;
+		fscanf(f,"%f %f",&poids,&valeur);
 		objet* obj = malloc(sizeof(objet));
 		obj->poids=poids;
 		obj->prix=valeur;
-		obj->nom=compteur+1;
+		obj->nom=compteur;
+		obj->pris = 0;
 		objets[compteur]=*obj;
 		compteur ++;
 	}
 
-	fclose(f);
-	return param;
+	fclose(f);*/
+	return objets;
 }
 
 
@@ -64,9 +76,10 @@ void permute(int i, int j, objet* array) {
 void placer_pivot(int g, int d, objet* array, int *p)
 {
     int i;
-    float pivot = array[g].prix/array[g].poids;
+    printf("%d", array[0].prix);
+    //float pivot = array[g].prix/array[g].poids;
 
-    *p = g;
+    /*p = g;
     for (i = g + 1; i <= d; i++)
     {
         if (array[i].prix/array[i].poids < pivot) {
@@ -74,7 +87,7 @@ void placer_pivot(int g, int d, objet* array, int *p)
             if (i != *p) permute(i, *p, array);
         }
     }
-    permute(*p, g, array);
+    permute(*p, g, array);*/
 }
 
 void tri_rapide_back(int g, int d, objet* array)
@@ -82,8 +95,8 @@ void tri_rapide_back(int g, int d, objet* array)
     int p;
     if (g < d) {
         placer_pivot(g, d, array, &p);
-        tri_rapide_back(g, p - 1, array);
-        tri_rapide_back(p + 1, d, array);
+        /*tri_rapide_back(g, p - 1, array);
+        tri_rapide_back(p + 1, d, array);*/
     }
 }
 
@@ -104,7 +117,7 @@ resoudreProbleme(objet* objets, float poidsMax, int nbObjet){
 	}
 }
 
-choisirObjet(objet* obj, float* poidsDispo){
+choisirObjet(objet* obj, float* poidsDispo){ // AJOUTER LA POSSSIBILITE DE COUPER LES OBJETS
 	if(obj->poids<=*poidsDispo){
 		obj->pris = 1 ;
 		*poidsDispo -= obj->poids;
@@ -135,12 +148,21 @@ int main(int argc, char *argv[])
 	parametre* param;
 	objet* listeObjets;
 
+	param = initialiserParam(argv[1]);
 
-	param = remplirTab (listeObjets, argv[1]); // remplir le tableau des objets
+	listeObjets = remplirTab (argv[1], param->nbObjet); // remplir le tableau des objets
+	
+	/*int i;
+	for(i=0;i<param->nbObjet;i++){
+		printf("%f\n",listeObjets[i].prix);	
+	}*/
+	
+	
 
-	tri_rapide (listeObjets,param->nbObjet); //trier le tableau en fonction des ratios
+	//tri_rapide (listeObjets,param->nbObjet); //trier le tableau en fonction des ratios
 
-	resoudreProbleme (listeObjets, param->poidsMax, param->nbObjet); //choisir les objets pris
+	//resoudreProbleme (listeObjets, param->poidsMax, param->nbObjet); //choisir les objets pris*/
 
-	afficherSolution (listeObjets, param->nbObjet); //afficher la solution
+	//afficherSolution (listeObjets, param->nbObjet); //afficher la solution
+
 }
