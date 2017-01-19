@@ -32,20 +32,20 @@ parametre* initialiserParam(char* nomFic){
 	param->poidsMax = 0;
 
 	
-	
 	fclose(f);
 
-	fscanf(f,"%d",&poidsMax);
 	param->poidsMax = poidsMax;
-
 	return param;
 }
 
 objet* remplirTab(char* nomFic,int nbObjet){
 
 	FILE* f = fopen(nomFic,"r");
-	objet* objets = malloc(sizeof(objet)*nbObjet);
-	/*fscanf(f,"");
+	objet* objets = malloc(sizeof(objet)*(nbObjet));
+	
+	int poidsMax = 0;
+	fscanf(f,"%d",&poidsMax);
+
 	int compteur = 0;
 	
 	while(!feof(f)){
@@ -60,7 +60,7 @@ objet* remplirTab(char* nomFic,int nbObjet){
 		compteur ++;
 	}
 
-	fclose(f);*/
+	fclose(f);
 	return objets;
 }
 
@@ -76,10 +76,9 @@ void permute(int i, int j, objet* array) {
 void placer_pivot(int g, int d, objet* array, int *p)
 {
     int i;
-    printf("%d", array[0].prix);
-    //float pivot = array[g].prix/array[g].poids;
+    float pivot = array[g].prix/array[g].poids;
 
-    /*p = g;
+    *p = g;
     for (i = g + 1; i <= d; i++)
     {
         if (array[i].prix/array[i].poids < pivot) {
@@ -87,7 +86,7 @@ void placer_pivot(int g, int d, objet* array, int *p)
             if (i != *p) permute(i, *p, array);
         }
     }
-    permute(*p, g, array);*/
+    permute(*p, g, array);
 }
 
 void tri_rapide_back(int g, int d, objet* array)
@@ -95,8 +94,8 @@ void tri_rapide_back(int g, int d, objet* array)
     int p;
     if (g < d) {
         placer_pivot(g, d, array, &p);
-        /*tri_rapide_back(g, p - 1, array);
-        tri_rapide_back(p + 1, d, array);*/
+        tri_rapide_back(g, p - 1, array);
+        tri_rapide_back(p + 1, d, array);
     }
 }
 
@@ -106,6 +105,18 @@ void tri_rapide(objet* array, int arraysize) {
 }
 
 // fin fonction de tri
+float choisirObjet(objet* obj, float poidsRestant){ // AJOUTER LA POSSSIBILITE DE COUPER LES OBJETS
+	float poidsDispo = poidsRestant;
+	if(obj->poids<=poidsDispo){
+		obj->pris = 1 ;
+		poidsDispo = poidsDispo-obj->poids;
+	}
+	else{
+		obj->pris = 0;
+	}
+	return poidsDispo;
+}
+
 
 resoudreProbleme(objet* objets, float poidsMax, int nbObjet){
 	float poidsRestant = poidsMax;
@@ -113,19 +124,10 @@ resoudreProbleme(objet* objets, float poidsMax, int nbObjet){
 
 	for(i=0;i<nbObjet;i++){
 		if(poidsRestant <=0) {break;}
-		choisirObjet(&objets[i],&poidsRestant);
+		poidsRestant=choisirObjet(&objets[i],poidsRestant);
 	}
 }
 
-choisirObjet(objet* obj, float* poidsDispo){ // AJOUTER LA POSSSIBILITE DE COUPER LES OBJETS
-	if(obj->poids<=*poidsDispo){
-		obj->pris = 1 ;
-		*poidsDispo -= obj->poids;
-	}
-	else{
-		obj->pris = 0;
-	}
-}
 
 afficherSolution(objet* objets, int nbObjet){
 	int i = 0;
@@ -150,19 +152,25 @@ int main(int argc, char *argv[])
 
 	param = initialiserParam(argv[1]);
 
-	listeObjets = remplirTab (argv[1], param->nbObjet); // remplir le tableau des objets
-	
-	/*int i;
+	listeObjets = remplirTab (argv[1], param->nbObjet); // remplir le tableau des objets	
+
+	int i;
 	for(i=0;i<param->nbObjet;i++){
-		printf("%f\n",listeObjets[i].prix);	
-	}*/
-	
-	
 
-	//tri_rapide (listeObjets,param->nbObjet); //trier le tableau en fonction des ratios
+		printf("%f %f\n",listeObjets[i].poids,listeObjets[i].prix);
+	}
+	printf("\n");
 
-	//resoudreProbleme (listeObjets, param->poidsMax, param->nbObjet); //choisir les objets pris*/
+	tri_rapide (listeObjets,param->nbObjet); //trier le tableau en fonction des ratios
 
-	//afficherSolution (listeObjets, param->nbObjet); //afficher la solution
+	for(i=0;i<param->nbObjet;i++){
+
+		printf("%f %f %f\n",listeObjets[i].poids,listeObjets[i].prix,listeObjets[i].poids/listeObjets[i].prix );
+	}
+
+
+	resoudreProbleme (listeObjets, param->poidsMax, param->nbObjet); //choisir les objets pris*/
+
+	afficherSolution (listeObjets, param->nbObjet); //afficher la solution
 
 }
