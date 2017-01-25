@@ -9,12 +9,18 @@ typedef struct object {
     float ratio;
 } object;
 
+typedef struct soluce
+{
+    int* taken;
+    float value;    
+} soluce;
+
 void displayObject(object* object) {
     printf("%d\tpoid: %f\tvaleur: %f\tratio: %f\n",
         object->name, object->weight, object->value, object->ratio);
 }
 
-float supPole(object** objects, int start int end, float max_weight) {
+float supPole(object** objects, int start, int end, float max_weight) {
     float consomated_weight = 0;
     float value = 0;
     for (int i = start; i < end; ++i) {
@@ -30,7 +36,71 @@ float supPole(object** objects, int start int end, float max_weight) {
     return value;
 }
 
-int* branchAndBound(object** objects, int start, int end, int* max_sollution, int* stock, int weight) {
+soluce* branchAndBound(object** objects, int start, int end,soluce* max_solution, int* stock, float weight) {
+
+    if(start>=end) return max_solution;
+
+
+    int i;
+
+    float value_stock = 0;
+
+    soluce* solution_gauche = (soluce*)malloc(sizeof(soluce*));
+    solution_gauche->taken= (int*)malloc(sizeof(int)*end);
+    soluce* solution_droite = (soluce*)malloc(sizeof(soluce*));
+    solution_droite->taken= (int*)malloc(sizeof(int)*end);
+    for(i=0;i<end;i++){
+        solution_gauche->taken[i]=0;
+        solution_droite->taken[i]=0;
+    }
+    solution_gauche->value=0;
+    solution_droite->value=0;
+
+    for(i=0;i<end;i++){
+        if(stock[i]==0){
+            value_stock+=objects[i]->value;
+        }
+    }
+    
+    float t = supPole(objects,start,end,weight) + value_stock;
+
+    if(t>max_solution->value){
+
+           
+    
+        if(objects[start]->weight<weight){
+            // printf("%f %f\n", objects[start]->weight,weight );
+            stock[start]=0;
+            solution_gauche=branchAndBound(objects,start+1,end,max_solution,stock,weight-objects[start]->weight);
+        }
+
+        for(i=0;i<end;i++){
+            if(solution_gauche->taken[i]==1) solution_gauche->value+=objects[i]->value;
+        }
+
+        if(solution_gauche->value>max_solution->value){
+            for(i=0;i<end;i++){
+                max_solution->taken[i]=solution_gauche->taken[i];
+            }
+            max_solution->value=solution_gauche->value;
+        }
+
+        stock[start]=1;
+        solution_droite=branchAndBound(objects,start+1,end,max_solution,stock,weight);
+
+    }
+    else{
+        return max_solution;
+    }
+
+    for(i=0;i<end;i++){
+            if(solution_droite->taken[i]==1) solution_droite->value+=objects[i]->value;
+    }    
+
+    if(solution_droite->value>max_solution->value){
+        return solution_droite;
+    }
+    return max_solution;
 
 }
 
@@ -92,10 +162,20 @@ int main(int argc, char const *argv[]) {
     printf("\n");
 
 
-    printf("Par glouton:\tconso:%f avec\n", supPole(objects, 0, nb_object, max_weight));
+    soluce* solution = (soluce*)malloc(sizeof(soluce*));
+    solution->taken= (int*)malloc(sizeof(int)*nb_object);
+    int* stock = (int*)malloc(sizeof(int)*nb_object);
 
+    for(i=0;i<nb_object;i++){
+        solution->taken[i]=0;
+        stock[i]=1;
+    }
 
+    soluce* result = branchAndBound(objects,0, nb_object,solution,stock,max_weight);
 
+    for(i=0;i<nb_object;i++){
+        if(result->taken[i])displayObject(objects[i]);
+    }
 
     printf("\n");
     printf("\n");
