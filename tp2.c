@@ -9,41 +9,29 @@ typedef struct object {
     float ratio;
 } object;
 
-typedef struct binaryDecisionTree {
-    object* object;
-    int is_taken;
-    struct binaryDecisionTree* left;
-    struct binaryDecisionTree* right;
-} binaryDecisionTree;
-
 void displayObject(object* object) {
     printf("%d\tpoid: %f\tvaleur: %f\tratio: %f\n",
         object->name, object->weight, object->value, object->ratio);
 }
 
-void freeTree(binaryDecisionTree* root) {
-    if (root->left != NULL) freeTree(root->left);
-    if (root->right != NULL) freeTree(root->right);
-    free(root);
+float supPole(object** objects, int start int end, float max_weight) {
+    float consomated_weight = 0;
+    float value = 0;
+    for (int i = start; i < end; ++i) {
+        if (consomated_weight + objects[i]->weight >= max_weight) { // je coupe
+            value += (objects[i]->value * (max_weight - consomated_weight)) / objects[i]->weight;
+            consomated_weight = max_weight;
+            break;
+        } else { // je prends
+            value += objects[i]->value;
+            consomated_weight += objects[i]->weight;
+        }
+    }
+    return value;
 }
 
-binaryDecisionTree* sortedArrayToBdt(object** objects, int start, int end, int is_taken) { //////////////////////////// IL FAUT FAIRE DES TRUCS ICICICICICICI
-    if (start >= end) return NULL;
-    binaryDecisionTree* node = (binaryDecisionTree*) malloc (sizeof(binaryDecisionTree));
-    node->object = objects[start];
-    node->is_taken = is_taken;
-    start++;
-    node->left = sortedArrayToBdt(objects, start, end, 0);
-    node->right = sortedArrayToBdt(objects, start, end, 1);
-    return node;
-}
+int* branchAndBound(object** objects, int start, int end, int* max_sollution, int* stock, int weight) {
 
-void displayBdt(binaryDecisionTree* root, int indent) {
-    if (root->left) displayBdt(root->left, indent + 1);
-    for (int i = 0; i < indent; ++i) printf("  ");
-    //displayObject(root->object);
-    printf("%d\n", root->object->name);
-    if (root->right) displayBdt(root->right, indent + 1);
 }
 
 // solution = tableau d'objet
@@ -103,40 +91,19 @@ int main(int argc, char const *argv[]) {
     printf("\n");
     printf("\n");
 
-    // trouver une borne supérieure par glouton
-    int taken[nb_object];
-    for (i = 0; i < nb_object; ++i) taken[i] = 0;
-    float consomated_weight = 0;
-    i = 0;
-    while (consomated_weight < max_weight) {
-        taken[i] = 1;
-        consomated_weight += objects[i]->weight;
-        ++i;
-    }
 
-    // version qui ne coupe pas d'objet
-    // for (i = 0; i < nb_object; ++i) {
-    //     if (objects[i]->weight + consomated_weight <= max_weight) {
-    //         taken[i] = 1;
-    //         consomated_weight += objects[i]->weight;
-    //     } else taken[i] = 0;
-    // }
-    printf("Par glouton:\tconso:%f avec\n", consomated_weight);
-    for (i = 0; i < nb_object; ++i)
-        if (taken[i] == 1)
-            displayObject(objects[i]);
+    printf("Par glouton:\tconso:%f avec\n", supPole(objects, 0, nb_object, max_weight));
+
+
 
 
     printf("\n");
     printf("\n");
     // construction de l'arbre
-    binaryDecisionTree* tree = sortedArrayToBdt(objects, 0, nb_object - 1, -1);
 
-    displayBdt(tree, 0);
 
     // FREE --------------------------------------
     for (i = 0; i < nb_object; ++i) free(objects[i]);
     free(objects);
-    freeTree(tree);
     return 0;
 }
