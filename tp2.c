@@ -9,10 +9,9 @@ typedef struct object {
     float ratio;
 } object;
 
-typedef struct soluce
-{
+typedef struct soluce {
     int* taken;
-    float value;    
+    float value;
 } soluce;
 
 void displayObject(object* object) {
@@ -20,7 +19,7 @@ void displayObject(object* object) {
         object->name, object->weight, object->value, object->ratio);
 }
 
-float supPole(object** objects, int start, int end, float max_weight) {
+float supBound(object** objects, int start, int end, float max_weight) {
     float consomated_weight = 0;
     float value = 0;
     for (int i = start; i < end; ++i) {
@@ -36,72 +35,21 @@ float supPole(object** objects, int start, int end, float max_weight) {
     return value;
 }
 
-soluce* branchAndBound(object** objects, int start, int end,soluce* max_solution, int* stock, float weight) {
-
-    if(start>=end) return max_solution;
-
-
-    int i;
-
-    float value_stock = 0;
-
-    soluce* solution_gauche = (soluce*)malloc(sizeof(soluce*));
-    solution_gauche->taken= (int*)malloc(sizeof(int)*end);
-    soluce* solution_droite = (soluce*)malloc(sizeof(soluce*));
-    solution_droite->taken= (int*)malloc(sizeof(int)*end);
-    for(i=0;i<end;i++){
-        solution_gauche->taken[i]=0;
-        solution_droite->taken[i]=0;
-    }
-    solution_gauche->value=0;
-    solution_droite->value=0;
-
-    for(i=0;i<end;i++){
-        if(stock[i]==0){
-            value_stock+=objects[i]->value;
-        }
-    }
-    
-    float t = supPole(objects,start,end,weight) + value_stock;
-
-    if(t>max_solution->value){
-
-           
-    
-        if(objects[start]->weight<weight){
-            // printf("%f %f\n", objects[start]->weight,weight );
-            stock[start]=0;
-            solution_gauche=branchAndBound(objects,start+1,end,max_solution,stock,weight-objects[start]->weight);
-        }
-
-        for(i=0;i<end;i++){
-            if(solution_gauche->taken[i]==1) solution_gauche->value+=objects[i]->value;
-        }
-
-        if(solution_gauche->value>max_solution->value){
-            for(i=0;i<end;i++){
-                max_solution->taken[i]=solution_gauche->taken[i];
-            }
-            max_solution->value=solution_gauche->value;
-        }
-
-        stock[start]=1;
-        solution_droite=branchAndBound(objects,start+1,end,max_solution,stock,weight);
-
-    }
-    else{
-        return max_solution;
+//parcourt profondeur
+// il faut, une liste d'element pris, un niveau, le poid libre restant, maintenir le meilleur coup
+// pensé a un compteur de nœud
+float branchAndBound(object** objects, int level, int nb_object, float weight, float current_value, int* nb_node) {
+    if (level >= nb_object) return current_value;
+    (*nb_node)++;
+    float s1 = -10000;
+    if (weight - objects[level]->weight >= 0) {
+        s1 = branchAndBound(objects, level + 1, nb_object, weight - objects[level]->weight, current_value + objects[level]->value, nb_node);
     }
 
-    for(i=0;i<end;i++){
-            if(solution_droite->taken[i]==1) solution_droite->value+=objects[i]->value;
-    }    
+    float s2 = branchAndBound(objects, level + 1, nb_object, weight, current_value, nb_node);
 
-    if(solution_droite->value>max_solution->value){
-        return solution_droite;
-    }
-    return max_solution;
-
+    if (s1 > s2) return s1;
+    return s2;
 }
 
 // solution = tableau d'objet
@@ -158,29 +106,10 @@ int main(int argc, char const *argv[]) {
 
     for (i = 0; i < nb_object; ++i)
         displayObject(objects[i]);
-    printf("\n");
-    printf("\n");
 
-
-    soluce* solution = (soluce*)malloc(sizeof(soluce*));
-    solution->taken= (int*)malloc(sizeof(int)*nb_object);
-    int* stock = (int*)malloc(sizeof(int)*nb_object);
-
-    for(i=0;i<nb_object;i++){
-        solution->taken[i]=0;
-        stock[i]=1;
-    }
-
-    soluce* result = branchAndBound(objects,0, nb_object,solution,stock,max_weight);
-
-    for(i=0;i<nb_object;i++){
-        if(result->taken[i])displayObject(objects[i]);
-    }
-
-    printf("\n");
-    printf("\n");
-    // construction de l'arbre
-
+    int nb_node = 0;
+    float bnb = branchAndBound(objects, 0, nb_object, max_weight, 0, &nb_node);
+    printf("optimum: %f node: %d\n", bnb, nb_node);
 
     // FREE --------------------------------------
     for (i = 0; i < nb_object; ++i) free(objects[i]);
