@@ -9,16 +9,6 @@ typedef struct object {
     float ratio;
 } object;
 
-typedef struct object_l {
-    struct list* next;
-    object* object;
-} object_l;
-
-typedef struct result {
-    struct list* head;
-    float value;
-} result;
-
 int getNbObject(FILE* f) {
     int nb_object = 0;
     while (! feof(f)) if (fgetc(f) == '\n') nb_object++;
@@ -47,19 +37,31 @@ void fillObjects(FILE* f, object** objects) {
     } while (! feof(f));
 }
 
-void sortObjects(object** objects, int nb_object) {
-    int j, i = 0;
-    while(i < nb_object - 1) {
-        j = nb_object - 1;
-        while(j > i) {
-            if (objects[i]->ratio < objects[j]->ratio) {
-                object* tmp = objects[i];
-                objects[i] = objects[j];
-                objects[j] = tmp;
-            }
-            j--;
+void swap(object** objects, int i, int j) {
+    object* tmp = objects[i];
+    objects[i] = objects[j];
+    objects[j] = tmp;
+}
+
+void pivot(object** objects, int left, int right, int *p) {
+    int i;
+    float pivot = objects[left]->ratio;
+    *p = left;
+    for (i = left + 1; i <= right; i++) {
+        if (objects[i]->ratio > pivot) {
+            (*p)++;
+            if (i != *p) swap(objects, i, *p);
         }
-        i++;
+    }
+    swap(objects, *p, left);
+}
+
+void quickSort(object** objects, int left, int right) {
+    int p;
+    if (left < right) {
+        pivot(objects, left, right, &p);
+        quickSort(objects, left, p - 1);
+        quickSort(objects, p + 1, right);
     }
 }
 
@@ -99,7 +101,15 @@ float branchAndBound(object** objects, int level, int nb_object, float weight, f
     return right;
 }
 
-// solution = tableau d'objet
+float knapsack(object** objects, int nb_object, int max_weight) {
+    int nb_node = 0;
+    float best_value = 0;
+    float bnb = branchAndBound(objects, 0, nb_object, max_weight, 0, &best_value, &nb_node);
+    printf("optimum: %f\n", bnb);
+    printf("nombre de nœud: %d\n", nb_node);
+    return bnb;
+}
+
 int main(int argc, char const *argv[]) {
     if (argc != 2) {
         printf("usage: %s chemin/du/sac\n", argv[0]);
@@ -115,15 +125,12 @@ int main(int argc, char const *argv[]) {
     fclose(f);
     printf("nb_object : %d\n", nb_object);
 
-    // TRIER (bulle :| ) --------------------------------------
-    sortObjects(objects, nb_object);
+    // TRIER --------------------------------------
+    quickSort(objects, 0, nb_object - 1);
     // for (int i = 0; i < nb_object; ++i) displayObject(objects[i]);
 
     // RESOUDRE --------------------------------------
-    int nb_node = 0;
-    float best_value = 0;
-    float bnb = branchAndBound(objects, 0, nb_object, max_weight, 0, &best_value, &nb_node);
-    printf("optimum: %f node: %d\n", bnb, nb_node);
+    knapsack(objects, nb_object, max_weight);
 
     // FREE --------------------------------------
     for (int i = 0; i < nb_object; ++i) free(objects[i]);
