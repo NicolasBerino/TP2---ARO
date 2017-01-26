@@ -9,10 +9,15 @@ typedef struct object {
     float ratio;
 } object;
 
-typedef struct soluce {
-    int* taken;
+typedef struct object_l {
+    struct list* next;
+    object* object;
+} object_l;
+
+typedef struct result {
+    struct list* head;
     float value;
-} soluce;
+} result;
 
 int getNbObject(FILE* f) {
     int nb_object = 0;
@@ -63,35 +68,35 @@ void displayObject(object* object) {
         object->number, object->weight, object->value, object->ratio);
 }
 
-float supBound(object** objects, int start, int end, float current_value, float max_weight) {
+float bound(object** objects, int start, int end, float value, float max_weight) {
     float consomated_weight = 0;
     for (int i = start; i < end; ++i) {
         if (consomated_weight + objects[i]->weight >= max_weight) { // je coupe
-            current_value += (objects[i]->value * (max_weight - consomated_weight)) / objects[i]->weight;
+            value += (objects[i]->value * (max_weight - consomated_weight) / objects[i]->weight);
             consomated_weight = max_weight;
             break;
         } else { // je prends
-            current_value += objects[i]->value;
+            value += objects[i]->value;
             consomated_weight += objects[i]->weight;
         }
     }
-    return current_value;
+    return value;
 }
 
-//parcourt profondeur
-// il faut, une liste d'element pris, un niveau, le poid libre restant, maintenir le meilleur coup
-// pensé a un compteur de nœud
-float branchAndBound(object** objects, int level, int nb_object, float weight, float current_value, int* nb_node) {
-    if (level >= nb_object) return current_value;
+float branchAndBound(object** objects, int level, int nb_object, float weight, float value, float *best_value, int *nb_node) {
+    if (level >= nb_object) return value;
     (*nb_node)++;
-    float right = -1, left = -1, n_weight = weight - objects[level]->weight;
-    if (n_weight >= 0)
-        right = branchAndBound(objects, level + 1, nb_object, n_weight, current_value + objects[level]->value, nb_node);
-    left = branchAndBound(objects, level + 1, nb_object, weight, current_value, nb_node);
-
-    if (right > left) return right;
-    return left;
-
+    float left = -1, right = -1, n_weight = weight - objects[level]->weight;
+    if (*best_value <= bound(objects, level, nb_object, value, weight)) {
+        if (n_weight >= 0) {
+            left = branchAndBound(objects, level + 1, nb_object, n_weight, value + objects[level]->value, best_value, nb_node);
+            if (left > *best_value) *best_value = left;
+        }
+        right = branchAndBound(objects, level + 1, nb_object, weight, value, best_value, nb_node);
+        if (right > *best_value) *best_value = right;
+    }
+    if (left > right) return left;
+    return right;
 }
 
 // solution = tableau d'objet
@@ -116,7 +121,8 @@ int main(int argc, char const *argv[]) {
 
     // RESOUDRE --------------------------------------
     int nb_node = 0;
-    float bnb = branchAndBound(objects, 0, nb_object, max_weight, 0,&nb_node);
+    float best_value = 0;
+    float bnb = branchAndBound(objects, 0, nb_object, max_weight, 0, &best_value, &nb_node);
     printf("optimum: %f node: %d\n", bnb, nb_node);
 
     // FREE --------------------------------------
