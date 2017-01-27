@@ -10,9 +10,14 @@ typedef struct object {
 } object;
 
 int getNbObject(FILE* f) {
+    rewind(f);
     int nb_object = 0;
-    while (! feof(f)) if (fgetc(f) == '\n') nb_object++;
-    return nb_object;
+    char buf[1000];
+    while(! feof(f)) {
+        fgets(buf, 100, f);
+        nb_object++;
+    }
+    return nb_object - 2;
 }
 
 int getMaxWeight(FILE* f) {
@@ -25,8 +30,7 @@ int getMaxWeight(FILE* f) {
 void fillObjects(FILE* f, object** objects) {
     float weight, value;
     int i = 0;
-    do {
-        fscanf(f, "%f %f", &weight, &value);
+    while(1 < fscanf(f, "%f %f", &weight, &value)) {
         object* obj = (object*) malloc(sizeof(object));
         obj->number = i;
         obj->weight = weight;
@@ -34,7 +38,7 @@ void fillObjects(FILE* f, object** objects) {
         obj->ratio = value / weight;
         objects[i] = obj;
         ++i;
-    } while (! feof(f));
+    }
 }
 
 void swap(object** objects, int i, int j) {
@@ -86,8 +90,8 @@ float bound(object** objects, int start, int end, float value, float max_weight)
 }
 
 float branchAndBound(object** objects, int level, int nb_object, float weight, float value, float *best_value, int *nb_node) {
-    if (level >= nb_object) return value;
     (*nb_node)++;
+    if (level >= nb_object || weight <= 0) return value;
     float left = -1, right = -1, n_weight = weight - objects[level]->weight;
     if (*best_value <= bound(objects, level, nb_object, value, weight)) {
         if (n_weight >= 0) {
@@ -97,8 +101,7 @@ float branchAndBound(object** objects, int level, int nb_object, float weight, f
         right = branchAndBound(objects, level + 1, nb_object, weight, value, best_value, nb_node);
         if (right > *best_value) *best_value = right;
     }
-    if (left > right) return left;
-    return right;
+    return *best_value;
 }
 
 float knapsack(object** objects, int nb_object, int max_weight) {
@@ -124,10 +127,10 @@ int main(int argc, char const *argv[]) {
     fillObjects(f, objects);
     fclose(f);
     printf("nb_object : %d\n", nb_object);
+    for (int i = 0; i < nb_object; ++i) displayObject(objects[i]);
 
     // TRIER --------------------------------------
     quickSort(objects, 0, nb_object - 1);
-    // for (int i = 0; i < nb_object; ++i) displayObject(objects[i]);
 
     // RESOUDRE --------------------------------------
     knapsack(objects, nb_object, max_weight);
