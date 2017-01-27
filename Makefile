@@ -1,10 +1,13 @@
 CC     = gcc
-CFLAGS = -Wall -std=c99
+CFLAGS = -g3 -std=c99
 
 all: knapsack
 
-knapsack:
-	$(CC) -o knapsack knapsack.c
+.c.o :
+	$(CC) -c $(CFLAGS) $*.c
+
+knapsack : %: %.o
+	$(CC) -o $@ $@.o
 
 clean:
-	rm -vf knapsack
+	rm -vf *.o knapsack
